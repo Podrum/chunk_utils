@@ -2,7 +2,8 @@
 #include <math.h>
 
 char *c_block_storage_serialize_blocks(int blocks[], int palette_length) {
-	char *result = malloc(16385);
+	char *result = malloc(1);
+	int size = 1
 	int bits_per_block = ceil(log2(palette_length));
 	if (bits_per_block <= 0) {
 		bits_per_block = 1;
@@ -30,6 +31,8 @@ char *c_block_storage_serialize_blocks(int blocks[], int palette_length) {
 			word |= state << (bits_per_block * ii);
 			++pos;
 		}
+		size += 4;
+		result = realloc(result, size * sizeof(char))
 		result[offset] = word & 0xff;
                 ++offset;
 		result[offset] = (word >> 8) & 0xff;
@@ -57,7 +60,7 @@ static PyObject *block_storage_serialize_blocks(PyObject *self, PyObject *args)
 		blocks[i] = PyLong_AsLong(long_obj) & 0xffffff;
 	}
 	char *result = c_block_storage_serialize_blocks(blocks, palette_length);
-	return PyBytes_FromStringAndSize(result, 16385);
+	return PyBytes_FromStringAndSize(result, sizeof(result));
 }
 
 static PyMethodDef myMethods[] = {
