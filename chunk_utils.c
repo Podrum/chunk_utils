@@ -1,7 +1,7 @@
 #include <Python.h>
 #include <math.h>
 
-char *c_block_storage_serialize_blocks(long int blocks[], int palette_length) {
+char *c_block_storage_serialize_blocks(int blocks[], int palette_length) {
 	char *result = malloc(16385);
 	int bits_per_block = ceil(log2(palette_length));
 	if (bits_per_block <= 0) {
@@ -50,11 +50,11 @@ static PyObject *block_storage_serialize_blocks(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "Oi", &blocks_obj, &palette_length)) {
 		return NULL;
 	}
-        long int blocks[4096];
+        int blocks[4096];
         int i;
         for (i = 0; i < 4096; ++i) {
 		long_obj = PyList_GetItem(blocks_obj, i);
-		blocks[i] = PyLong_AsLong(long_obj);
+		blocks[i] = PyLong_AsLong(long_obj) & 0xffffff;
 	}
 	char *result = c_block_storage_serialize_blocks(blocks, palette_length);
 	return PyBytes_FromStringAndSize(result, 16385);
