@@ -1,9 +1,14 @@
 #include <Python.h>
 #include <math.h>
 
-char *c_block_storage_serialize_blocks(int blocks[], int palette_length) {
+typedef struct {
+	char *buffer;
+	int size;
+} pack_t;
+
+pack_t c_block_storage_serialize_blocks(int blocks[], int palette_length) {
 	char *result = malloc(1);
-	int size = 1
+	int size = 1;
 	int bits_per_block = ceil(log2(palette_length));
 	if (bits_per_block <= 0) {
 		bits_per_block = 1;
@@ -32,7 +37,7 @@ char *c_block_storage_serialize_blocks(int blocks[], int palette_length) {
 			++pos;
 		}
 		size += 4;
-		result = realloc(result, size * sizeof(char))
+		result = realloc(result, size * sizeof(char));
 		result[offset] = word & 0xff;
                 ++offset;
 		result[offset] = (word >> 8) & 0xff;
@@ -42,7 +47,10 @@ char *c_block_storage_serialize_blocks(int blocks[], int palette_length) {
 		result[offset] = (word >> 24) & 0xff;
 		++offset;
 	}
-	return result;
+	pack_t out;
+	out.buffer = result;
+	out.size = size;
+	return out;
 }
 
 static PyObject *block_storage_serialize_blocks(PyObject *self, PyObject *args)
@@ -59,8 +67,8 @@ static PyObject *block_storage_serialize_blocks(PyObject *self, PyObject *args)
 		long_obj = PyList_GetItem(blocks_obj, i);
 		blocks[i] = PyLong_AsLong(long_obj) & 0xffffff;
 	}
-	char *result = c_block_storage_serialize_blocks(blocks, palette_length);
-	return PyBytes_FromStringAndSize(result, sizeof(result));
+	pack_t result = c_block_storage_serialize_blocks(blocks, palette_length);
+	return PyBytes_FromStringAndSize(result.buffer, result.size);
 }
 
 static PyMethodDef myMethods[] = {
