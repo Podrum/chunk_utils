@@ -23,7 +23,7 @@ pack_t c_block_storage_serialize_blocks(int blocks[], int palette_length) {
 	}
 	result[0] = (bits_per_block << 1) | 1;
         int blocks_per_word = floor(32 / bits_per_block);
-	int words_per_chunk = ceil(4096 / bits_per_block);
+	int words_per_chunk = ceil(4096 / blocks_per_word);
 	int offset = 1;
 	int pos = 0;
 	for (i = 0; i < words_per_chunk; ++i) {
