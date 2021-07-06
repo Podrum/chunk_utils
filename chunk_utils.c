@@ -137,6 +137,12 @@ static PyMethodDef myMethods[] = {
 		block_storage_network_serialize,
 		METH_VARARGS,
 		"Serialises network block storages."
+	},
+	{
+		NULL,
+		NULL,
+		0,
+		NULL
 	}
 };
 
