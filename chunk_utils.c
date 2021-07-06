@@ -21,7 +21,12 @@ typedef struct {
 	int size;
 } pack_t;
 
-pack_t c_block_storage_serialize_blocks(int blocks[], int palette_length) {
+
+int sign_var_int(unsigned int value) {
+	return value >= 0 ? (value << 1) : (((-value - 1) << 1) | 1);
+}
+
+pack_t c_block_storage_network_serialize(int blocks[], int palette[], int palette_length) {
 	char *result = malloc(1);
 	int size = 1;
 	int bits_per_block = ceil(log2(palette_length));
@@ -62,36 +67,76 @@ pack_t c_block_storage_serialize_blocks(int blocks[], int palette_length) {
 		result[offset] = (word >> 24) & 0xff;
 		++offset;
 	}
+        int value;
+	unsigned char to_write;
+	value = sign_var_int(palette_length) & 0xffffffff;
+	for (ii = 0; ii < 5; ++ii) {
+		to_write = value & 0x7f;
+		value >>= 7;
+		size += 1;
+		result = realloc(result, size * sizeof(char));
+		if (value != 0) {
+			result[offset] = to_write | 0x80;
+			++offset;
+		} else {
+			result[offset] = to_write;
+			++offset;
+			break;
+		}
+	}
+	for (i = 0; i < palette_length; ++i) {
+		value = sign_var_int(palette[i]) & 0xffffffff;
+		for (ii = 0; ii < 5; ++ii) {
+			to_write = value & 0x7f;
+			value >>= 7;
+			size += 1;
+			result = realloc(result, size * sizeof(char));
+			if (value != 0) {
+				result[offset] = to_write | 0x80;
+				++offset;
+			} else {
+				result[offset] = to_write;
+				++offset;
+				break;
+			}
+		}
+	}
 	pack_t out;
 	out.buffer = result;
 	out.size = size;
 	return out;
 }
 
-static PyObject *block_storage_serialize_blocks(PyObject *self, PyObject *args)
+static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
 {
 	PyObject *blocks_obj;
+	PyObject *palette_obj;
 	PyObject *long_obj;
 	int palette_length;
-	if (!PyArg_ParseTuple(args, "Oi", &blocks_obj, &palette_length)) {
+	if (!PyArg_ParseTuple(args, "OOi", &blocks_obj, &palette_obj, &palette_length)) {
 		return NULL;
 	}
         int blocks[4096];
         int i;
         for (i = 0; i < 4096; ++i) {
 		long_obj = PyList_GetItem(blocks_obj, i);
-		blocks[i] = PyLong_AsLong(long_obj) & 0xffffff;
+		blocks[i] = PyLong_AsLong(long_obj);
 	}
-	pack_t result = c_block_storage_serialize_blocks(blocks, palette_length);
+	int palette[palette_length];
+	for (i = 0; i < palette_length; ++i) {
+		long_obj = PyList_GetItem(palette_obj, i);
+		palette[i] = PyLong_AsLong(long_obj);
+	}
+	pack_t result = c_block_storage_network_serialize(blocks, palette, palette_length);
 	return PyBytes_FromStringAndSize(result.buffer, result.size);
 }
 
 static PyMethodDef myMethods[] = {
 	{
-		"block_storage_serialize_blocks",
-		block_storage_serialize_blocks,
+		"block_storage_network_serialize",
+		block_storage_network_serialize,
 		METH_VARARGS,
-		"Serialises blocks."
+		"Serialises network block storages."
 	}
 };
 
