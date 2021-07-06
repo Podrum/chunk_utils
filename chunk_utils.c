@@ -21,12 +21,11 @@ typedef struct {
 	int size;
 } pack_t;
 
-
 int sign_var_int(unsigned int value) {
 	return value >= 0 ? (value << 1) : ((((-1 * value) - 1) << 1) | 1);
 }
 
-pack_t c_block_storage_network_serialize(int blocks[], int palette[], int palette_length) {
+pack_t c_block_storage_network_serialize(int *blocks, int *palette, int palette_length) {
 	char *result = malloc(1);
 	int size = 1;
 	int bits_per_block = (int) ceil(log2(palette_length));
@@ -116,7 +115,7 @@ static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "OOi", &blocks_obj, &palette_obj, &palette_length)) {
 		return NULL;
 	}
-        int blocks[4096];
+        int *blocks = malloc(4096 * sizeof(int));
         int i;
         for (i = 0; i < 4096; ++i) {
 		long_obj = PyList_GetItem(blocks_obj, i);
