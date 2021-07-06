@@ -29,7 +29,7 @@ int sign_var_int(unsigned int value) {
 pack_t c_block_storage_network_serialize(int blocks[], int palette[], int palette_length) {
 	char *result = malloc(1);
 	int size = 1;
-	int bits_per_block = ceil(log2(palette_length));
+	int bits_per_block = (int) ceil(log2(palette_length));
 	if (bits_per_block <= 0) {
 		bits_per_block = 1;
 	}
@@ -42,8 +42,8 @@ pack_t c_block_storage_network_serialize(int blocks[], int palette[], int palett
 		}
 	}
 	result[0] = (bits_per_block << 1) | 1;
-        int blocks_per_word = floor(32 / bits_per_block);
-	int words_per_chunk = ceil(4096 / blocks_per_word);
+        int blocks_per_word = (int) floor(32 / bits_per_block);
+	int words_per_chunk = (int) ceil(4096 / blocks_per_word);
 	int offset = 1;
 	int pos = 0;
 	for (i = 0; i < words_per_chunk; ++i) {
