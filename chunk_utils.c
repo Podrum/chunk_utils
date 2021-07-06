@@ -23,7 +23,7 @@ typedef struct {
 
 
 int sign_var_int(unsigned int value) {
-	return value >= 0 ? (value << 1) : (((-value - 1) << 1) | 1);
+	return value >= 0 ? (value << 1) : ((((-1 * value) - 1) << 1) | 1);
 }
 
 pack_t c_block_storage_network_serialize(int blocks[], int palette[], int palette_length) {
