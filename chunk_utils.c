@@ -16,6 +16,11 @@
 #include <Python.h>
 #include <math.h>
 
+typedef struct {
+	char *buffer;
+	int size;
+} pack_t;
+
 int sign_var_int(unsigned int value) {
 	return value >= 0 ? (value << 1) : ((((-1 * value) - 1) << 1) | 1);
 }
@@ -77,8 +82,7 @@ int perlin(int x, int z, int r, int scale, int octaves, int persistence, int lac
 	int m = 60000;
 }
 
-char *c_block_storage_network_serialize(int *blocks, int *palette) {
-	int palette_length = sizeof(palette) / sizeof(int);
+pack_t c_block_storage_network_serialize(int *blocks, int *palette, int palette_length) {
 	char *result = malloc(1);
 	int size = 1;
 	int bits_per_block = (int) ceil(log2(palette_length));
@@ -153,7 +157,10 @@ char *c_block_storage_network_serialize(int *blocks, int *palette) {
 			}
 		}
 	}
-	return result;
+	pack_t out;
+	out.buffer = result;
+	out.size = size;
+	return out;
 }
 
 static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
@@ -161,7 +168,7 @@ static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
 	PyObject *blocks_obj;
 	PyObject *palette_obj;
 	PyObject *long_obj;
-	if (!PyArg_ParseTuple(args, "OO", &blocks_obj, &palette_obj)) {
+	if (!PyArg_ParseTuple(args, "OOi", &blocks_obj, &palette_obj)) {
 		return NULL;
 	}
         int *blocks = malloc(4096 * sizeof(int));
@@ -176,8 +183,8 @@ static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
 		long_obj = PyList_GetItem(palette_obj, i);
 		palette[i] = PyLong_AsLong(long_obj);
 	}
-	char *result = c_block_storage_network_serialize(blocks, palette);
-	return PyBytes_FromStringAndSize(result, sizeof(result) / sizeof(char));
+	pack_t result = c_block_storage_network_serialize(blocks, palette, palette_length);
+	return PyBytes_FromStringAndSize(result.buffer, result.size);
 }
 
 static PyMethodDef myMethods[] = {
