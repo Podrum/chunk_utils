@@ -84,10 +84,10 @@ int perlin_noise(int x, int y, int z, int grad, int fade, int lerp, int m, int *
 	       perlin_lerp(u, perlin_grad(p[ab + 1], x, y - 1, z - 1), perlin_grad(p[bb + 1], x - 1, y - 1, z - 1))));
 }
 
-pack_t c_block_storage_network_serialize(int *blocks, int *palette, int palette_length) {
+pack_t c_block_storage_network_serialize(block_storage_t *storage) {
 	char *result = malloc(1);
 	int size = 1;
-	int bits_per_block = (int) ceil(log2(palette_length));
+	int bits_per_block = (int) ceil(log2(storage->palette_length));
 	if (bits_per_block <= 0) {
 		bits_per_block = 1;
 	}
@@ -110,7 +110,7 @@ pack_t c_block_storage_network_serialize(int *blocks, int *palette, int palette_
 			if (pos >= 4096) {
 				break;
 			}
-			state = blocks[pos];
+			state = storage->blocks[pos];
 			word |= state << (bits_per_block * ii);
 			++pos;
 		}
@@ -127,7 +127,7 @@ pack_t c_block_storage_network_serialize(int *blocks, int *palette, int palette_
 	}
         int value;
 	unsigned char to_write;
-	value = sign_var_int(palette_length) & 0xffffffff;
+	value = sign_var_int(storage->palette_length) & 0xffffffff;
 	for (ii = 0; ii < 5; ++ii) {
 		to_write = value & 0x7f;
 		value >>= 7;
@@ -143,7 +143,7 @@ pack_t c_block_storage_network_serialize(int *blocks, int *palette, int palette_
 		}
 	}
 	for (i = 0; i < palette_length; ++i) {
-		value = sign_var_int(palette[i]) & 0xffffffff;
+		value = sign_var_int(storage->palette[i]) & 0xffffffff;
 		for (ii = 0; ii < 5; ++ii) {
 			to_write = value & 0x7f;
 			value >>= 7;
@@ -185,7 +185,11 @@ static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
 		long_obj = PyList_GetItem(palette_obj, i);
 		palette[i] = PyLong_AsLong(long_obj);
 	}
-	pack_t result = c_block_storage_network_serialize(blocks, palette, palette_length);
+	block_storage_t storage;
+	storage.blocks = blocks;
+	storage.palette = palette;
+	storage.palette_length = palette_length;
+	pack_t result = c_block_storage_network_serialize(storage);
 	return PyBytes_FromStringAndSize(result.buffer, result.size);
 }
 
