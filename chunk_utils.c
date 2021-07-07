@@ -189,7 +189,7 @@ static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
 	storage.blocks = blocks;
 	storage.palette = palette;
 	storage.palette_length = palette_length;
-	pack_t result = c_block_storage_network_serialize(storage);
+	pack_t result = c_block_storage_network_serialize(&storage);
 	return PyBytes_FromStringAndSize(result.buffer, result.size);
 }
 
