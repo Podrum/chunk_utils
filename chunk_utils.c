@@ -168,7 +168,7 @@ static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
 	PyObject *blocks_obj;
 	PyObject *palette_obj;
 	PyObject *long_obj;
-	if (!PyArg_ParseTuple(args, "OOi", &blocks_obj, &palette_obj)) {
+	if (!PyArg_ParseTuple(args, "OO", &blocks_obj, &palette_obj)) {
 		return NULL;
 	}
         int *blocks = malloc(4096 * sizeof(int));
