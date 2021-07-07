@@ -13,7 +13,7 @@
 #                                                       #
 #########################################################
 
-from distutils.core import setup, Extension
+from setuptools import setup, Extension
 
 module = Extension("chunk_utils", sources = ["chunk_utils.c"])
 
