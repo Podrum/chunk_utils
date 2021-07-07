@@ -78,6 +78,10 @@ int perlin_noise(int x, int y, int z, int grad, int fade, int lerp, int m, int *
 	       perlin_lerp(u, perlin_grad(p[ab + 1], x, y - 1, z - 1), perlin_grad(p[bb + 1], x - 1, y - 1, z - 1))));
 }
 
+int perlin(int x, int z, int r, int scale, int octaves, int persistence, int lacunarity, int seed_max) {
+	int m = 60000;
+}
+
 pack_t c_block_storage_network_serialize(int *blocks, int *palette, int palette_length) {
 	char *result = malloc(1);
 	int size = 1;
