@@ -21,6 +21,12 @@ typedef struct {
 	int size;
 } pack_t;
 
+typedef struct {
+	int *blocks;
+	int *palette;
+	int palette_length;
+} block_storage_t;
+
 int sign_var_int(unsigned int value) {
 	return value >= 0 ? (value << 1) : ((((-1 * value) - 1) << 1) | 1);
 }
