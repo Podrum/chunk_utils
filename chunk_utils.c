@@ -25,6 +25,34 @@ int sign_var_int(unsigned int value) {
 	return value >= 0 ? (value << 1) : ((((-1 * value) - 1) << 1) | 1);
 }
 
+int perlin_grad(int hash, int x, int y, int z) {
+	int u, v;
+	hash &= 15;
+	if (hash & 8) {
+		u = y;
+	} else {
+		u = x;
+	}
+	if (hash & 12) {
+		if (hash == 12 || hash == 14) {
+			v = x;
+		} else {
+			v = z;
+		}
+	} else {
+		v = y;
+	}
+	return ((hash & 1) ? u : (-1 * u)) + ((hash & 2) ? v : (-1 * v));
+}
+
+int perlin_fade(int t) {
+	return t * t * t * (t * (t * 6 - 15) + 10);
+}
+
+int perlin_lerp(int t, int a, int b) {
+	return a + t * (b - a);
+}
+
 pack_t c_block_storage_network_serialize(int *blocks, int *palette, int palette_length) {
 	char *result = malloc(1);
 	int size = 1;
