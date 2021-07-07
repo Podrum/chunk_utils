@@ -16,11 +16,6 @@
 #include <Python.h>
 #include <math.h>
 
-typedef struct {
-	char *buffer;
-	int size;
-} pack_t;
-
 int sign_var_int(unsigned int value) {
 	return value >= 0 ? (value << 1) : ((((-1 * value) - 1) << 1) | 1);
 }
@@ -82,8 +77,8 @@ int perlin(int x, int z, int r, int scale, int octaves, int persistence, int lac
 	int m = 60000;
 }
 
-pack_t c_block_storage_network_serialize(int *blocks, int *palette) {
-	int palette_length = sizeof(palette) / sizeof(palette[0]);
+char *c_block_storage_network_serialize(int *blocks, int *palette) {
+	int palette_length = sizeof(palette) / sizeof(int);
 	char *result = malloc(1);
 	int size = 1;
 	int bits_per_block = (int) ceil(log2(palette_length));
@@ -158,10 +153,7 @@ pack_t c_block_storage_network_serialize(int *blocks, int *palette) {
 			}
 		}
 	}
-	pack_t out;
-	out.buffer = result;
-	out.size = size;
-	return out;
+	return result;
 }
 
 static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
@@ -169,8 +161,7 @@ static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
 	PyObject *blocks_obj;
 	PyObject *palette_obj;
 	PyObject *long_obj;
-	int palette_length;
-	if (!PyArg_ParseTuple(args, "OOi", &blocks_obj, &palette_obj, &palette_length)) {
+	if (!PyArg_ParseTuple(args, "OOi", &blocks_obj, &palette_obj)) {
 		return NULL;
 	}
         int *blocks = malloc(4096 * sizeof(int));
@@ -181,14 +172,14 @@ static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
 	}
 	int *palette = malloc(0);
 	int size = 0;
-	for (i = 0; i < palette_length; ++i) {
+	for (i = 0; i < PyList_Size(palette); ++i) {
 		++size;
 		palette = realloc(palette, size * sizeof(int));
 		long_obj = PyList_GetItem(palette_obj, i);
 		palette[i] = PyLong_AsLong(long_obj);
 	}
-	pack_t result = c_block_storage_network_serialize(blocks, palette, palette_length);
-	return PyBytes_FromStringAndSize(result.buffer, result.size);
+	char *result = c_block_storage_network_serialize(blocks, palette);
+	return PyBytes_FromStringAndSize(result, sizeof(result) / sizeof(char));
 }
 
 static PyMethodDef myMethods[] = {
