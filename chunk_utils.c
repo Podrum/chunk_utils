@@ -82,7 +82,8 @@ int perlin(int x, int z, int r, int scale, int octaves, int persistence, int lac
 	int m = 60000;
 }
 
-pack_t c_block_storage_network_serialize(int *blocks, int *palette, int palette_length) {
+pack_t c_block_storage_network_serialize(int *blocks, int *palette) {
+	int palette_length = sizeof(palette) / sizeof(palette[0]);
 	char *result = malloc(1);
 	int size = 1;
 	int bits_per_block = (int) ceil(log2(palette_length));
