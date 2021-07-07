@@ -53,6 +53,31 @@ int perlin_lerp(int t, int a, int b) {
 	return a + t * (b - a);
 }
 
+int perlin_noise(int x, int y, int z, int grad, int fade, int lerp, int m, int *p) {
+	int xf = (int) floor(x);
+	int yf = (int) floor(y);
+	int zf = (int) floor(z);
+	int xm = xf % m;
+	int ym = yf % m;
+	int zm = zf % m;
+	x -= xf;
+	y -= yf;
+	z -= zf;
+	int u = perlin_fade(x);
+	int v = perlin_fade(y);
+	int w = perlin_fade(z);
+	int a = p[xm] + ym;
+	int aa = p[a] + zm;
+	int ab = p[a + 1] + zm;
+	int b = p[xm + 1] + ym;
+	int ba = p[b] + zm;
+	int bb = p[b + 1] + zm;
+	return perlin_lerp(w, perlin_lerp(v, perlin_lerp(u, perlin_grad(p[aa], x, y, z), perlin_grad(p[ba], x - 1, y, z)),
+	       perlin_lerp(u, perlin_grad(p[ab], x, y - 1, z), perlin_grad(p[bb], x - 1, y - 1, z))),
+	       perlin_lerp(v, perlin_lerp(u, perlin_grad(p[aa + 1], x, y, z - 1), perlin_grad(p[ba + 1], x - 1, y, z - 1)),
+	       perlin_lerp(u, perlin_grad(p[ab + 1], x, y - 1, z - 1), perlin_grad(p[bb + 1], x - 1, y - 1, z - 1))));
+}
+
 pack_t c_block_storage_network_serialize(int *blocks, int *palette, int palette_length) {
 	char *result = malloc(1);
 	int size = 1;
