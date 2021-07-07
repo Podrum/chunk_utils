@@ -161,7 +161,7 @@ static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
 	PyObject *blocks_obj;
 	PyObject *palette_obj;
 	PyObject *long_obj;
-	if (!PyArg_ParseTuple(args, "OOi", &blocks_obj, &palette_obj)) {
+	if (!PyArg_ParseTuple(args, "OO", &blocks_obj, &palette_obj)) {
 		return NULL;
 	}
         int *blocks = malloc(4096 * sizeof(int));
@@ -170,11 +170,9 @@ static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
 		long_obj = PyList_GetItem(blocks_obj, i);
 		blocks[i] = PyLong_AsLong(long_obj);
 	}
-	int *palette = malloc(0);
-	int size = 0;
-	for (i = 0; i < PyList_Size(palette); ++i) {
-		++size;
-		palette = realloc(palette, size * sizeof(int));
+	int palette_length = PyList_Size(palette_obj);
+	int *palette = malloc(palette_length * sizeof(int));
+	for (i = 0; i < ; ++i) {
 		long_obj = PyList_GetItem(palette_obj, i);
 		palette[i] = PyLong_AsLong(long_obj);
 	}
