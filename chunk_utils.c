@@ -179,8 +179,11 @@ static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
 		long_obj = PyList_GetItem(blocks_obj, i);
 		blocks[i] = PyLong_AsLong(long_obj);
 	}
-	int *palette = malloc(palette_length * sizeof(int));
+	int *palette = malloc(0);
+	int size = 0;
 	for (i = 0; i < palette_length; ++i) {
+		++size;
+		palette = realloc(palette, size * sizeof(int));
 		long_obj = PyList_GetItem(palette_obj, i);
 		palette[i] = PyLong_AsLong(long_obj);
 	}
