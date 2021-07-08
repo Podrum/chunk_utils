@@ -92,7 +92,7 @@ pack_t c_block_storage_network_serialize(block_storage_t *storage) {
 		bits_per_block = 1;
 	}
 	char bits[8] = {1, 2, 3, 4, 5, 6, 8, 16};
-        int i, ii, word, state;
+        unsigned int i, ii, word, state;
         for (i = 0; i < 8; ++i) {
 		if (bits[i] >= bits_per_block) {
 			bits_per_block = bits[i];
