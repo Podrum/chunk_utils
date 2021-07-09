@@ -70,7 +70,7 @@ int perlin_noise(int x, int y, int z, int grad, int fade, int lerp, int m, int *
 }
 
 typedef struct {
-	unsigned char *buffer;
+	char *buffer;
 	int size;
 } pack_t;
 
@@ -112,16 +112,30 @@ pack_t c_block_storage_network_serialize(unsigned int blocks[], int *palette, in
 	out.buffer = malloc(1);
 	out.size = 1;
 	int bits_per_block = (int) ceil(log2(palette_length));
-	int bits[8] = {1, 2, 3, 4, 5, 6, 8, 16};
-        for (int i = 0; i < 8; ++i) {
-		if (bits[i] >= bits_per_block) {
-			bits_per_block = bits[i];
+	switch (bits_per_block)
+	{
+		case 0:
+			bits_per_block = 1;
 			break;
-		}
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+		case 6:
+			break;
+		case 7:
+		case 8:
+			bits_per_block = 8;
+		default:
+			if (bits_per_block > 8) {
+				bits_per_block = 16;
+			}
+			break;
 	}
-	out.buffer[0] = (bits_per_block << 1) | 1;
-	int blocks_per_word = (int) floor(32 / bits_per_block);
-	int words_per_chunk = (int) ceil(4096 / blocks_per_word);
+	out.buffer[0] = (char) ((bits_per_block << 1) | 1);
+	int blocks_per_word = (int) floor(32.0 / bits_per_block);
+	int words_per_chunk = (int) ceil(4096.0 / blocks_per_word);
 	int pos = 0;
 	for (int chunk_index = 0; chunk_index < words_per_chunk; ++chunk_index) {
 		unsigned int word = 0;
@@ -129,7 +143,7 @@ pack_t c_block_storage_network_serialize(unsigned int blocks[], int *palette, in
 			if (pos >= 4096) {
 				break;
 			}
-			unsigned int state = blocks[pos];
+			unsigned int state = (unsigned int) blocks[pos];
 			word |= state << (bits_per_block * block_index);
 			++pos;
 		}
