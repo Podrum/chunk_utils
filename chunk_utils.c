@@ -21,8 +21,8 @@ typedef struct {
 	int size;
 } pack_t;
 
-int sign_var_int(unsigned int value) {
-	return value >= 0 ? (value << 1) : ((((-1 * value) - 1) << 1) | 1);
+unsigned int unsign_var_int(int value) {
+	return (value << 1) ^ (value >> 31);
 }
 
 pack_t c_block_storage_network_serialize(int *blocks, int *palette, int palette_length) {
@@ -66,9 +66,9 @@ pack_t c_block_storage_network_serialize(int *blocks, int *palette, int palette_
 		result[offset] = (word >> 24) & 0xff;
 		++offset;
 	}
-        int value;
+        unsigned int value;
 	unsigned char to_write;
-	value = sign_var_int(palette_length) & 0xffffffff;
+	value = unsign_var_int(palette_length) & 0xffffffff;
 	for (ii = 0; ii < 5; ++ii) {
 		to_write = value & 0x7f;
 		value >>= 7;
@@ -84,7 +84,7 @@ pack_t c_block_storage_network_serialize(int *blocks, int *palette, int palette_
 		}
 	}
 	for (i = 0; i < palette_length; ++i) {
-		value = sign_var_int(palette[i]) & 0xffffffff;
+		value = unsign_var_int(palette[i]) & 0xffffffff;
 		for (ii = 0; ii < 5; ++ii) {
 			to_write = value & 0x7f;
 			value >>= 7;
