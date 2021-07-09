@@ -80,9 +80,11 @@ unsigned int zigzag32(int value) {
 
 void put_var_int(unsigned int value, char **buffer, int *offset) {
 	while ((value & -128) != 0) {
-		(*buffer) = realloc((*buffer), (offset + 1) * sizeof(char));
-		(*buffer)[offset] = ((value & 0x7F) | 0x80);
-		++(*offset);
+		char *buffer_ref = *buffer;
+		int offset_ref = *offset;
+		buffer_ref = realloc(buffer_ref, (offset_ref + 1) * sizeof(char));
+		buffer_ref[offset_ref] = ((value & 0x7F) | 0x80);
+		++offset_ref;
 		value >>= 7;
 	}
 }
@@ -92,15 +94,17 @@ void put_signed_var_int(int value, char **buffer, int *offset) {
 }
 
 void put_unsigned_int_le(unsigned int value, char **buffer, int *offset) {
-	(*buffer) = realloc((*buffer), (offset + 4) * sizeof(char));
-	(*buffer)[offset] = value & 0xff;
-	++(*offset);
-	(*buffer)[offset] = (value >> 8) & 0xff;
-	++(*offset);
-	(*buffer)[offset] = (value >> 16) & 0xff;
-	++(*offset);
-	(*buffer)[offset] = (value >> 24) & 0xff;
-	++(*offset);
+	char *buffer_ref = *buffer;
+	int offset_ref = *offset;
+	buffer_ref = realloc(buffer_ref, (offset_ref + 4) * sizeof(char));
+	buffer_ref[offset_ref] = value & 0xff;
+	++buffer_ref;
+	buffer_ref[offset_ref] = (value >> 8) & 0xff;
+	++buffer_ref;
+	buffer_ref[offset_ref] = (value >> 16) & 0xff;
+	++buffer_ref;
+	buffer_ref[offset_ref] = (value >> 24) & 0xff;
+	++buffer_ref;
 }
 
 pack_t c_block_storage_network_serialize(unsigned int *blocks, int *palette, int palette_length) {
@@ -118,21 +122,21 @@ pack_t c_block_storage_network_serialize(unsigned int *blocks, int *palette, int
 	int words_per_chunk = (int) ceil(4096 / blocks_per_word);
 	int offset = 1;
 	int pos = 0;
-	for (i = 0; i < words_per_chunk; ++i) {
+	for (int chunk_index = 0; chunk_index < words_per_chunk; ++chunk_index) {
 		unsigned int word = 0;
 		for (int block_index = 0; block_index < blocks_per_word; ++block_index) {
 			if (pos >= 4096) {
 				break;
 			}
 			unsigned int state = blocks[pos];
-			word |= state << (bits_per_block * ii);
+			word |= state << (bits_per_block * block_index);
 			++pos;
 		}
-		put_unsigned_int_le(word, &buffer, &offset);
+		put_unsigned_int_le(word, &result, &offset);
 	}
-	put_signed_var_int(palette_length, &buffer, &offset);
+	put_signed_var_int(palette_length, &result, &offset);
 	for (int i = 0; i < palette_length; ++i) {
-		put_signed_var_int(palette[i], &buffer, &offset);
+		put_signed_var_int(palette[i], &result, &offset);
 	}
 	pack_t out;
 	out.buffer = result;
@@ -148,15 +152,14 @@ static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "OO", &blocks_obj, &palette_obj)) {
 		return NULL;
 	}
-        int *blocks = malloc(4096 * sizeof(int));
-        int i;
-        for (i = 0; i < 4096; ++i) {
-		long_obj = PyList_GetItem(blocks_obj, i);
-		blocks[i] = PyLong_AsLong(long_obj);
+    int *blocks = malloc(4096 * sizeof(int));
+    for (int i = 0; i < 4096; ++i) {
+			long_obj = PyList_GetItem(blocks_obj, i);
+			blocks[i] = PyLong_AsLong(long_obj);
 	}
 	int palette_length = (int) PyList_Size(palette_obj);
 	int *palette = malloc(palette_length * sizeof(int));
-	for (i = 0; i < palette_length; ++i) {
+	for (int i = 0; i < palette_length; ++i) {
 		long_obj = PyList_GetItem(palette_obj, i);
 		palette[i] = PyLong_AsLong(long_obj);
 	}
