@@ -21,8 +21,61 @@ typedef struct {
 	int size;
 } pack_t;
 
-unsigned int unsign_var_int(int value) {
-	return (value << 1) ^ (value >> 31);
+int sign_var_int(unsigned int value) {
+	return value >= 0 ? (value << 1) : ((((-1 * value) - 1) << 1) | 1);
+}
+
+int perlin_grad(int hash, int x, int y, int z) {
+	int u, v;
+	hash &= 15;
+	if (hash & 8) {
+		u = y;
+	} else {
+		u = x;
+	}
+	if (hash & 12) {
+		if (hash == 12 || hash == 14) {
+			v = x;
+		} else {
+			v = z;
+		}
+	} else {
+		v = y;
+	}
+	return ((hash & 1) ? u : (-1 * u)) + ((hash & 2) ? v : (-1 * v));
+}
+
+int perlin_fade(int t) {
+	return t * t * t * (t * (t * 6 - 15) + 10);
+}
+
+int perlin_lerp(int t, int a, int b) {
+	return a + t * (b - a);
+}
+
+int perlin_noise(int x, int y, int z, int grad, int fade, int lerp, int m, int *p) {
+	int xf = (int) floor(x);
+	int yf = (int) floor(y);
+	int zf = (int) floor(z);
+	int xm = xf % m;
+	int ym = yf % m;
+	int zm = zf % m;
+	x -= xf;
+	y -= yf;
+	z -= zf;
+	int u = perlin_fade(x);
+	int v = perlin_fade(y);
+	int w = perlin_fade(z);
+	int a = p[xm] + ym;
+	int aa = p[a] + zm;
+	int ab = p[a + 1] + zm;
+	int b = p[xm + 1] + ym;
+	int ba = p[b] + zm;
+	int bb = p[b + 1] + zm;
+	return perlin_lerp(w, perlin_lerp(v, perlin_lerp(u, perlin_grad(p[aa], x, y, z), perlin_grad(p[ba], x - 1, y, z)),
+	       perlin_lerp(u, perlin_grad(p[ab], x, y - 1, z), perlin_grad(p[bb], x - 1, y - 1, z))),
+	       perlin_lerp(v, perlin_lerp(u, perlin_grad(p[aa + 1], x, y, z - 1), perlin_grad(p[ba + 1], x - 1, y, z - 1)),
+	       perlin_lerp(u, perlin_grad(p[ab + 1], x, y - 1, z - 1), perlin_grad(p[bb + 1], x - 1, y - 1, z - 1))));
 }
 
 pack_t c_block_storage_network_serialize(int *blocks, int *palette, int palette_length) {
@@ -66,9 +119,9 @@ pack_t c_block_storage_network_serialize(int *blocks, int *palette, int palette_
 		result[offset] = (word >> 24) & 0xff;
 		++offset;
 	}
-        unsigned int value;
+        int value;
 	unsigned char to_write;
-	value = unsign_var_int(palette_length) & 0xffffffff;
+	value = sign_var_int(palette_length) & 0xffffffff;
 	for (ii = 0; ii < 5; ++ii) {
 		to_write = value & 0x7f;
 		value >>= 7;
@@ -84,7 +137,7 @@ pack_t c_block_storage_network_serialize(int *blocks, int *palette, int palette_
 		}
 	}
 	for (i = 0; i < palette_length; ++i) {
-		value = unsign_var_int(palette[i]) & 0xffffffff;
+		value = sign_var_int(palette[i]) & 0xffffffff;
 		for (ii = 0; ii < 5; ++ii) {
 			to_write = value & 0x7f;
 			value >>= 7;
@@ -111,8 +164,7 @@ static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
 	PyObject *blocks_obj;
 	PyObject *palette_obj;
 	PyObject *long_obj;
-	int palette_length;
-	if (!PyArg_ParseTuple(args, "OOi", &blocks_obj, &palette_obj, &palette_length)) {
+	if (!PyArg_ParseTuple(args, "OO", &blocks_obj, &palette_obj)) {
 		return NULL;
 	}
         int *blocks = malloc(4096 * sizeof(int));
@@ -121,6 +173,7 @@ static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
 		long_obj = PyList_GetItem(blocks_obj, i);
 		blocks[i] = PyLong_AsLong(long_obj);
 	}
+	int palette_length = (int) PyList_Size(palette_obj);
 	int *palette = malloc(palette_length * sizeof(int));
 	for (i = 0; i < palette_length; ++i) {
 		long_obj = PyList_GetItem(palette_obj, i);
