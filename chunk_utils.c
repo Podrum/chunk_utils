@@ -74,10 +74,6 @@ int perlin_noise(int x, int y, int z, int grad, int fade, int lerp, int m, int *
 	       perlin_lerp(u, perlin_grad(p[ab + 1], x, y - 1, z - 1), perlin_grad(p[bb + 1], x - 1, y - 1, z - 1))));
 }
 
-unsigned int zigzag32(int value) {
-	return (value << 1) ^ (value >> 31);
-}
-
 void put_var_int(unsigned int value, pack_t *pack) {
 	value &= 0xffffffff;
 	for (int i = 0; i < 5; ++i) {
@@ -96,7 +92,7 @@ void put_var_int(unsigned int value, pack_t *pack) {
 }
 
 void put_signed_var_int(int value, pack_t *pack) {
-	put_var_int(zigzag32(value), pack);
+	put_var_int((value << 1) ^ (value >> 31), pack);
 }
 
 void put_unsigned_int_le(unsigned int value, pack_t *pack) {
