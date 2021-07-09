@@ -21,10 +21,6 @@ typedef struct {
 	int size;
 } pack_t;
 
-int sign_var_int(unsigned int value) {
-	return value >= 0 ? (value << 1) : ((((-1 * value) - 1) << 1) | 1);
-}
-
 int perlin_grad(int hash, int x, int y, int z) {
 	int u, v;
 	hash &= 15;
@@ -78,16 +74,40 @@ int perlin_noise(int x, int y, int z, int grad, int fade, int lerp, int m, int *
 	       perlin_lerp(u, perlin_grad(p[ab + 1], x, y - 1, z - 1), perlin_grad(p[bb + 1], x - 1, y - 1, z - 1))));
 }
 
-pack_t c_block_storage_network_serialize(int *blocks, int *palette, int palette_length) {
-	char *result = malloc(1);
-	int size = 1;
-	int bits_per_block = (int) ceil(log2(palette_length));
-	if (bits_per_block <= 0) {
-		bits_per_block = 1;
+unsigned int zigzag32(int value) {
+	return (value << 1) ^ (value >> 31);
+}
+
+void put_var_int(unsigned int value, char **buffer, int *offset) {
+	while ((value & -128) != 0) {
+		(*buffer) = realloc((*buffer), (offset + 1) * sizeof(char));
+		(*buffer)[offset] = ((value & 0x7F) | 0x80);
+		++(*offset);
+		value >>= 7;
 	}
-	char bits[8] = {1, 2, 3, 4, 5, 6, 8, 16};
-        int i, ii, word, state;
-        for (i = 0; i < 8; ++i) {
+}
+
+void put_signed_var_int(int value, char **buffer, int *offset) {
+	put_var_int(zigzag32(value), buffer, offset);
+}
+
+void put_unsigned_int_le(unsigned int value, char **buffer, int *offset) {
+	(*buffer) = realloc((*buffer), (offset + 4) * sizeof(char));
+	(*buffer)[offset] = value & 0xff;
+	++(*offset);
+	(*buffer)[offset] = (value >> 8) & 0xff;
+	++(*offset);
+	(*buffer)[offset] = (value >> 16) & 0xff;
+	++(*offset);
+	(*buffer)[offset] = (value >> 24) & 0xff;
+	++(*offset);
+}
+
+pack_t c_block_storage_network_serialize(unsigned int *blocks, int *palette, int palette_length) {
+	char *result = malloc(1);
+	int bits_per_block = (int) ceil(log2(palette_length));
+	int bits[8] = {1, 2, 3, 4, 5, 6, 8, 16};
+        for (int i = 0; i < 8; ++i) {
 		if (bits[i] >= bits_per_block) {
 			bits_per_block = bits[i];
 			break;
@@ -99,63 +119,24 @@ pack_t c_block_storage_network_serialize(int *blocks, int *palette, int palette_
 	int offset = 1;
 	int pos = 0;
 	for (i = 0; i < words_per_chunk; ++i) {
-		word = 0;
-		for (ii = 0; ii < blocks_per_word; ++ii) {
+		unsigned int word = 0;
+		for (int block_index = 0; block_index < blocks_per_word; ++block_index) {
 			if (pos >= 4096) {
 				break;
 			}
-			state = blocks[pos];
+			unsigned int state = blocks[pos];
 			word |= state << (bits_per_block * ii);
 			++pos;
 		}
-		size += 4;
-		result = realloc(result, size * sizeof(char));
-		result[offset] = word & 0xff;
-                ++offset;
-		result[offset] = (word >> 8) & 0xff;
-		++offset;
-		result[offset] = (word >> 16) & 0xff;
-		++offset;
-		result[offset] = (word >> 24) & 0xff;
-		++offset;
+		put_unsigned_int_le(word, &buffer, &offset);
 	}
-        int value;
-	unsigned char to_write;
-	value = sign_var_int(palette_length) & 0xffffffff;
-	for (ii = 0; ii < 5; ++ii) {
-		to_write = value & 0x7f;
-		value >>= 7;
-		size += 1;
-		result = realloc(result, size * sizeof(char));
-		if (value != 0) {
-			result[offset] = to_write | 0x80;
-			++offset;
-		} else {
-			result[offset] = to_write;
-			++offset;
-			break;
-		}
-	}
-	for (i = 0; i < palette_length; ++i) {
-		value = sign_var_int(palette[i]) & 0xffffffff;
-		for (ii = 0; ii < 5; ++ii) {
-			to_write = value & 0x7f;
-			value >>= 7;
-			size += 1;
-			result = realloc(result, size * sizeof(char));
-			if (value != 0) {
-				result[offset] = to_write | 0x80;
-				++offset;
-			} else {
-				result[offset] = to_write;
-				++offset;
-				break;
-			}
-		}
+	put_signed_var_int(palette_length, &buffer, &offset);
+	for (int i = 0; i < palette_length; ++i) {
+		put_signed_var_int(palette[i], &buffer, &offset);
 	}
 	pack_t out;
 	out.buffer = result;
-	out.size = size;
+	out.size = offset;
 	return out;
 }
 
