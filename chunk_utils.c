@@ -16,11 +16,6 @@
 #include <Python.h>
 #include <math.h>
 
-typedef struct {
-	char *buffer;
-	int size;
-} pack_t;
-
 int perlin_grad(int hash, int x, int y, int z) {
 	int u, v;
 	hash &= 15;
@@ -74,6 +69,11 @@ int perlin_noise(int x, int y, int z, int grad, int fade, int lerp, int m, int *
 	       perlin_lerp(u, perlin_grad(p[ab + 1], x, y - 1, z - 1), perlin_grad(p[bb + 1], x - 1, y - 1, z - 1))));
 }
 
+typedef struct {
+	unsigned char *buffer;
+	int size;
+} pack_t;
+
 void put_var_int(unsigned int value, pack_t *pack) {
 	value &= 0xffffffff;
 	for (int i = 0; i < 5; ++i) {
@@ -107,7 +107,7 @@ void put_unsigned_int_le(unsigned int value, pack_t *pack) {
 	++pack->size;
 }
 
-pack_t c_block_storage_network_serialize(unsigned int *blocks, int *palette, int palette_length) {
+pack_t c_block_storage_network_serialize(unsigned int blocks[], int *palette, int palette_length) {
 	pack_t out;
 	out.buffer = malloc(1);
 	out.size = 1;
@@ -150,10 +150,10 @@ static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "OO", &blocks_obj, &palette_obj)) {
 		return NULL;
 	}
-	int *blocks = malloc(4096 * sizeof(int));
+	unsigned int blocks[4096];
 	for (int i = 0; i < 4096; ++i) {
-			long_obj = PyList_GetItem(blocks_obj, i);
-			blocks[i] = PyLong_AsLong(long_obj);
+		long_obj = PyList_GetItem(blocks_obj, i);
+		blocks[i] = PyLong_AsLong(long_obj);
 	}
 	int palette_length = (int) PyList_Size(palette_obj);
 	int *palette = malloc(palette_length * sizeof(int));
