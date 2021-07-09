@@ -120,7 +120,7 @@ pack_t c_block_storage_network_serialize(unsigned int *blocks, int *palette, int
 		}
 	}
 	out.buffer[0] = (bits_per_block << 1) | 1;
-    int blocks_per_word = (int) floor(32 / bits_per_block);
+	int blocks_per_word = (int) floor(32 / bits_per_block);
 	int words_per_chunk = (int) ceil(4096 / blocks_per_word);
 	int pos = 0;
 	for (int chunk_index = 0; chunk_index < words_per_chunk; ++chunk_index) {
@@ -150,8 +150,8 @@ static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "OO", &blocks_obj, &palette_obj)) {
 		return NULL;
 	}
-    int *blocks = malloc(4096 * sizeof(int));
-    for (int i = 0; i < 4096; ++i) {
+	int *blocks = malloc(4096 * sizeof(int));
+	for (int i = 0; i < 4096; ++i) {
 			long_obj = PyList_GetItem(blocks_obj, i);
 			blocks[i] = PyLong_AsLong(long_obj);
 	}
