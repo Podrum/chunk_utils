@@ -78,37 +78,43 @@ unsigned int zigzag32(int value) {
 	return (value << 1) ^ (value >> 31);
 }
 
-void put_var_int(unsigned int value, char **buffer, int *offset) {
-	while ((value & -128) != 0) {
-		char *buffer_ref = *buffer;
-		int offset_ref = *offset;
-		buffer_ref = realloc(buffer_ref, (offset_ref + 1) * sizeof(char));
-		buffer_ref[offset_ref] = ((value & 0x7F) | 0x80);
-		++offset_ref;
+void put_var_int(unsigned int value, pack_t *pack) {
+	value &= 0xffffffff;
+	for (int i = 0; i < 5; ++i) {
+		unsigned char to_write = value & 0x7f;
 		value >>= 7;
+		pack->buffer = realloc(pack->buffer, (pack->size + 1) * sizeof(char));
+		if (value != 0) {
+			pack->buffer[pack->size] = (to_write | 0x80);
+			++pack->size;
+		} else {
+			pack->buffer[pack->size] = to_write;
+			++pack->size;
+			break;
+		}
 	}
 }
 
-void put_signed_var_int(int value, char **buffer, int *offset) {
-	put_var_int(zigzag32(value), buffer, offset);
+void put_signed_var_int(int value, pack_t *pack) {
+	put_var_int(zigzag32(value), pack);
 }
 
-void put_unsigned_int_le(unsigned int value, char **buffer, int *offset) {
-	char *buffer_ref = *buffer;
-	int offset_ref = *offset;
-	buffer_ref = realloc(buffer_ref, (offset_ref + 4) * sizeof(char));
-	buffer_ref[offset_ref] = value & 0xff;
-	++buffer_ref;
-	buffer_ref[offset_ref] = (value >> 8) & 0xff;
-	++buffer_ref;
-	buffer_ref[offset_ref] = (value >> 16) & 0xff;
-	++buffer_ref;
-	buffer_ref[offset_ref] = (value >> 24) & 0xff;
-	++buffer_ref;
+void put_unsigned_int_le(unsigned int value, pack_t *pack) {
+	pack->buffer = realloc(pack->buffer, (pack->size + 4) * sizeof(char));
+	pack->buffer[pack->size] = value & 0xff;
+	++pack->size;
+	pack->buffer[pack->size] = (value >> 8) & 0xff;
+	++pack->size;
+	pack->buffer[pack->size] = (value >> 16) & 0xff;
+	++pack->size;
+	pack->buffer[pack->size] = (value >> 24) & 0xff;
+	++pack->size;
 }
 
 pack_t c_block_storage_network_serialize(unsigned int *blocks, int *palette, int palette_length) {
-	char *result = malloc(1);
+	pack_t out;
+	out.buffer = malloc(1);
+	out.size = 1;
 	int bits_per_block = (int) ceil(log2(palette_length));
 	int bits[8] = {1, 2, 3, 4, 5, 6, 8, 16};
         for (int i = 0; i < 8; ++i) {
@@ -117,10 +123,9 @@ pack_t c_block_storage_network_serialize(unsigned int *blocks, int *palette, int
 			break;
 		}
 	}
-	result[0] = (bits_per_block << 1) | 1;
-        int blocks_per_word = (int) floor(32 / bits_per_block);
+	out.buffer[0] = (bits_per_block << 1) | 1;
+    int blocks_per_word = (int) floor(32 / bits_per_block);
 	int words_per_chunk = (int) ceil(4096 / blocks_per_word);
-	int offset = 1;
 	int pos = 0;
 	for (int chunk_index = 0; chunk_index < words_per_chunk; ++chunk_index) {
 		unsigned int word = 0;
@@ -132,15 +137,12 @@ pack_t c_block_storage_network_serialize(unsigned int *blocks, int *palette, int
 			word |= state << (bits_per_block * block_index);
 			++pos;
 		}
-		put_unsigned_int_le(word, &result, &offset);
+		put_unsigned_int_le(word, &out);
 	}
-	put_signed_var_int(palette_length, &result, &offset);
+	put_signed_var_int(palette_length, &out);
 	for (int i = 0; i < palette_length; ++i) {
-		put_signed_var_int(palette[i], &result, &offset);
+		put_signed_var_int(palette[i], &out);
 	}
-	pack_t out;
-	out.buffer = result;
-	out.size = offset;
 	return out;
 }
 
