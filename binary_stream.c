@@ -162,4 +162,6 @@ void put_var_long(unsigned long int value, binary_stream_t *stream) {
 	}
 }
 
-
+void put_signed_var_long(long int value, binary_stream_t *stream) {
+	put_var_long((value << 1) ^ (value >> 63), stream);
+}
