@@ -15,6 +15,112 @@
 
 #include "binary_stream.h"
 
+unsigned char get_unsigned_byte(binary_stream_t *stream) {
+	unsigned char value = stream->buffer[stream->offset] & 0xff;
+	++stream->offset;
+	return value;
+}
+
+unsigned short get_unsigned_short_le(binary_stream_t *stream) {
+	unsigned short value = stream->buffer[stream->offset] & 0xff;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 8;
+	++stream->offset;
+	return value;
+}
+
+unsigned short get_unsigned_short_be(binary_stream_t *stream) {
+	unsigned short value = (stream->buffer[stream->offset] & 0xff) << 8;
+	++stream->offset;
+	value |= stream->buffer[stream->offset] & 0xff;
+	++stream->offset;
+	return value;
+}
+
+unsigned int get_unsigned_triad_le(binary_stream_t *stream) {
+	unsigned short value = stream->buffer[stream->offset] & 0xff;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 8;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 16;
+	++stream->offset;
+	return value;
+}
+
+unsigned int get_unsigned_triad_be(binary_stream_t *stream) {
+	unsigned short value = (stream->buffer[stream->offset] & 0xff) << 16;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 8;
+	++stream->offset;
+	value |= stream->buffer[stream->offset] & 0xff;
+	++stream->offset;
+	return value;
+}
+
+unsigned int get_unsigned_int_le(binary_stream_t *stream) {
+	unsigned short value = stream->buffer[stream->offset] & 0xff;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 8;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 16;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 24;
+	++stream->offset;
+	return value;
+}
+
+unsigned int get_unsigned_int_be(binary_stream_t *stream) {
+	unsigned short value = (stream->buffer[stream->offset] & 0xff) << 24;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 16;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 8;
+	++stream->offset;
+	value |= stream->buffer[stream->offset] & 0xff;
+	++stream->offset;
+	return value;
+}
+
+unsigned int get_unsigned_long_le(binary_stream_t *stream) {
+	unsigned short value = stream->buffer[stream->offset] & 0xff;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 8;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 16;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 24;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 32;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 40;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 48;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 56;
+	++stream->offset;
+	return value;
+}
+
+unsigned int get_unsigned_long_be(binary_stream_t *stream) {
+	unsigned short value = (stream->buffer[stream->offset] & 0xff) << 56;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 48;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 40;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 32;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 24;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 16;
+	++stream->offset;
+	value |= (stream->buffer[stream->offset] & 0xff) << 8;
+	++stream->offset;
+	value |= stream->buffer[stream->offset] & 0xff;
+	++stream->offset;
+	return value;
+}
+
 void put_unsigned_byte(unsigned char value, binary_stream_t *stream) {
 	stream->buffer = realloc(stream->buffer, (stream->size + 1) * sizeof(char));
 	stream->buffer[stream->size] = value & 0xff;
