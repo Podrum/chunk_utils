@@ -16,7 +16,7 @@
 #include "binary_stream.h"
 #include <stdlib.h>
 
-char *get(int count, binary_stream_t *stream) {
+char *get_bytes(int count, binary_stream_t *stream) {
 	char *result = malloc(count * sizeof(char));
 	for (int i = 0; i < count; ++i) {
 		result[i] = stream->buffer[stream->offset];
@@ -25,7 +25,7 @@ char *get(int count, binary_stream_t *stream) {
 	return result;
 }
 
-char *get_remaining(binary_stream_t *stream) {
+char *get_remaining_bytes(binary_stream_t *stream) {
 	return get(stream->size - stream->offset - 1, stream);
 }
 
@@ -169,7 +169,7 @@ long int get_signed_var_long(binary_stream_t *stream) {
 	return temp ^ (raw & (1 << 63));
 }
 
-void put(char *data, int size, binary_stream_t *stream) {
+void put_bytes(char *data, int size, binary_stream_t *stream) {
 	for (int i = 0; i < size) {
 		stream->buffer = realloc(stream->buffer, (stream->size + 1) * sizeof(char));
 		stream->buffer[stream->size] = data[i];
