@@ -81,7 +81,7 @@ unsigned int get_unsigned_int_be(binary_stream_t *stream) {
 	return value;
 }
 
-unsigned int get_unsigned_long_le(binary_stream_t *stream) {
+unsigned long int get_unsigned_long_le(binary_stream_t *stream) {
 	unsigned short value = stream->buffer[stream->offset] & 0xff;
 	++stream->offset;
 	value |= (stream->buffer[stream->offset] & 0xff) << 8;
@@ -101,7 +101,7 @@ unsigned int get_unsigned_long_le(binary_stream_t *stream) {
 	return value;
 }
 
-unsigned int get_unsigned_long_be(binary_stream_t *stream) {
+unsigned long int get_unsigned_long_be(binary_stream_t *stream) {
 	unsigned short value = (stream->buffer[stream->offset] & 0xff) << 56;
 	++stream->offset;
 	value |= (stream->buffer[stream->offset] & 0xff) << 48;
@@ -119,6 +119,40 @@ unsigned int get_unsigned_long_be(binary_stream_t *stream) {
 	value |= stream->buffer[stream->offset] & 0xff;
 	++stream->offset;
 	return value;
+}
+
+unsigned int get_var_int(binary_stream_t *stream) {
+	int value = 0;
+	for (int i = 0; i < 35; i += 7) {
+		unsigned char to_read = get_unsigned_byte(stream);
+		value |= ((to_read & 0x7f) << i);
+		if ((to_read & 0x80) == 0) {
+			return value;
+		}
+	}
+}
+
+int get_signed_var_int(binary_stream_t *stream) {
+	unsigned int raw = get_var_int(stream);
+	int temp = (((raw << 31) >> 31) ^ raw) >> 1;
+	return temp ^ (raw & (1 << 31));
+}
+
+unsigned long int get_var_long(binary_stream_t *stream) {
+	int value = 0;
+	for (int i = 0; i < 70; i += 7) {
+		unsigned char to_read = get_unsigned_byte(stream);
+		value |= ((to_read & 0x7f) << i);
+		if ((to_read & 0x80) == 0) {
+			return value;
+		}
+	}
+}
+
+long int get_signed_var_long(binary_stream_t *stream) {
+	unsigned long int raw = get_var_long(stream);
+	long int temp = (((raw << 63) >> 63) ^ raw) >> 1;
+	return temp ^ (raw & (1 << 63));
 }
 
 void put_unsigned_byte(unsigned char value, binary_stream_t *stream) {
