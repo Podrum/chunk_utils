@@ -14,6 +14,20 @@
  */
 
 #include "binary_stream.h"
+#include <stdlib.h>
+
+char *get(int count, binary_stream_t *stream) {
+	char *result = malloc(count * sizeof(char));
+	for (int i = 0; i < count; ++i) {
+		result[i] = stream->buffer[stream->offset];
+		++stream->offset;
+	}
+	return result;
+}
+
+char *get_remaining(binary_stream_t *stream) {
+	return get(stream->size - stream->offset - 1, stream);
+}
 
 unsigned char get_unsigned_byte(binary_stream_t *stream) {
 	unsigned char value = stream->buffer[stream->offset] & 0xff;
