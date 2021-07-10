@@ -22,7 +22,7 @@ unsigned int get_var_int(binary_stream_t *stream);
 int get_signed_var_int(binary_stream_t *stream);
 unsigned long int get_var_long(binary_stream_t *stream);
 long int get_signed_var_long(binary_stream_t *stream);
-void put_bytes(char *data, int size, binary_stream_t *stream)
+void put_bytes(char *data, int size, binary_stream_t *stream);
 void put_unsigned_byte(unsigned char value, binary_stream_t *stream);
 void put_unsigned_short_le(unsigned short value, binary_stream_t *stream);
 void put_unsigned_short_be(unsigned short value, binary_stream_t *stream);
