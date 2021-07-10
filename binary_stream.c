@@ -169,6 +169,34 @@ long int get_signed_var_long(binary_stream_t *stream) {
 	return temp ^ (raw & (1 << 63));
 }
 
+float get_float_le(binary_stream_t *stream) {
+	unsigned int i = get_unsigned_int_le(stream);
+	float f;
+	memcpy(&i, &f, sizeof(f));
+	return f;
+}
+
+float get_float_be(binary_stream_t *stream) {
+	unsigned int i = get_unsigned_int_be(stream);
+	float f;
+	memcpy(&i, &f, sizeof(f));
+	return f;
+}
+
+double get_double_le(binary_stream_t *stream) {
+	unsigned long int l = get_unsigned_long_le(stream);
+	double f;
+	memcpy(&l, &f, sizeof(f));
+	return f;
+}
+
+double get_double_be(binary_stream_t *stream) {
+	unsigned long int l = get_unsigned_long_be(stream);
+	double f;
+	memcpy(&l, &f, sizeof(f));
+	return f;
+}
+
 void put_bytes(char *data, int size, binary_stream_t *stream) {
 	for (int i = 0; i < size) {
 		stream->buffer = realloc(stream->buffer, (stream->size + 1) * sizeof(char));
@@ -326,4 +354,28 @@ void put_var_long(unsigned long int value, binary_stream_t *stream) {
 
 void put_signed_var_long(long int value, binary_stream_t *stream) {
 	put_var_long((value << 1) ^ (value >> 63), stream);
+}
+
+void put_float_le(float value, binary_stream_t *stream) {
+	unsigned int i;
+	memcpy(&value, &i, sizeof(i));
+	put_unsigned_int_le(i);
+}
+
+void put_float_be(float value, binary_stream_t *stream) {
+	unsigned int i;
+	memcpy(&value, &i, sizeof(i));
+	put_unsigned_int_be(i);
+}
+
+void put_double_le(double value, binary_stream_t *stream) {
+	unsigned long int i;
+	memcpy(&value, &i, sizeof(i));
+	put_unsigned_long_le(i);
+}
+
+void put_double_be(double value, binary_stream_t *stream) {
+	unsigned long int i;
+	memcpy(&value, &i, sizeof(i));
+	put_unsigned_long_be(i);
 }
