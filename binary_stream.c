@@ -169,6 +169,14 @@ long int get_signed_var_long(binary_stream_t *stream) {
 	return temp ^ (raw & (1 << 63));
 }
 
+void put(char *data, int size, binary_stream_t *stream) {
+	for (int i = 0; i < size) {
+		stream->buffer = realloc(stream->buffer, (stream->size + 1) * sizeof(char));
+		stream->buffer[stream->size] = data[i];
+		++stream->size;
+	}
+}
+
 void put_unsigned_byte(unsigned char value, binary_stream_t *stream) {
 	stream->buffer = realloc(stream->buffer, (stream->size + 1) * sizeof(char));
 	stream->buffer[stream->size] = value & 0xff;
