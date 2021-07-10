@@ -22,6 +22,10 @@ unsigned int get_var_int(binary_stream_t *stream);
 int get_signed_var_int(binary_stream_t *stream);
 unsigned long int get_var_long(binary_stream_t *stream);
 long int get_signed_var_long(binary_stream_t *stream);
+float get_float_le(binary_stream_t *stream);
+float get_float_be(binary_stream_t *stream);
+double get_double_le(binary_stream_t *stream);
+double get_double_be(binary_stream_t *stream);
 void put_bytes(char *data, int size, binary_stream_t *stream);
 void put_unsigned_byte(unsigned char value, binary_stream_t *stream);
 void put_unsigned_short_le(unsigned short value, binary_stream_t *stream);
@@ -36,5 +40,9 @@ void put_var_int(unsigned int value, binary_stream_t *stream);
 void put_signed_var_int(int value, binary_stream_t *stream);
 void put_var_long(unsigned long int value, binary_stream_t *stream);
 void put_signed_var_long(long int value, binary_stream_t *stream);
+void put_float_le(float value, binary_stream_t *stream);
+void put_float_be(float value, binary_stream_t *stream);
+void put_double_le(double value, binary_stream_t *stream);
+void put_double_be(double value, binary_stream_t *stream);
 
 #endif
