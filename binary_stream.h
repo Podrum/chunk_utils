@@ -7,6 +7,8 @@ typedef struct {
 	int offset;
 } binary_stream_t;
 
+char *get(int count, binary_stream_t *stream);
+char *get_remaining(binary_stream_t *stream);
 unsigned char get_unsigned_byte(binary_stream_t *stream);
 unsigned short get_unsigned_short_le(binary_stream_t *stream);
 unsigned short get_unsigned_short_be(binary_stream_t *stream);
