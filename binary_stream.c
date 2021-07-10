@@ -145,3 +145,21 @@ void put_var_int(unsigned int value, binary_stream_t *stream) {
 void put_signed_var_int(int value, binary_stream_t *stream) {
 	put_var_int((value << 1) ^ (value >> 31), stream);
 }
+
+void put_var_long(unsigned long int value, binary_stream_t *stream) {
+	for (int i = 0; i < 10; ++i) {
+		unsigned char to_write = value & 0x7f;
+		value >>= 7;
+		stream->buffer = realloc(stream->buffer, (stream->size + 1) * sizeof(char));
+		if (value != 0) {
+			stream->buffer[stream->size] = (to_write | 0x80);
+			++stream->size;
+		} else {
+			stream->buffer[stream->size] = to_write;
+			++stream->size;
+			break;
+		}
+	}
+}
+
+
