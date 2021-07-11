@@ -13,6 +13,7 @@
  *
  */
 
+#include "binary_stream.h"
 #include <Python.h>
 #include <math.h>
 
@@ -69,48 +70,11 @@ int perlin_noise(int x, int y, int z, int grad, int fade, int lerp, int m, int *
 	       perlin_lerp(u, perlin_grad(p[ab + 1], x, y - 1, z - 1), perlin_grad(p[bb + 1], x - 1, y - 1, z - 1))));
 }
 
-typedef struct {
-	char *buffer;
-	int size;
-} pack_t;
-
-void put_var_int(unsigned int value, pack_t *pack) {
-	value &= 0xffffffff;
-	for (int i = 0; i < 5; ++i) {
-		unsigned char to_write = value & 0x7f;
-		value >>= 7;
-		pack->buffer = realloc(pack->buffer, (pack->size + 1) * sizeof(char));
-		if (value != 0) {
-			pack->buffer[pack->size] = (to_write | 0x80);
-			++pack->size;
-		} else {
-			pack->buffer[pack->size] = to_write;
-			++pack->size;
-			break;
-		}
-	}
-}
-
-void put_signed_var_int(int value, pack_t *pack) {
-	put_var_int((value << 1) ^ (value >> 31), pack);
-}
-
-void put_unsigned_int_le(unsigned int value, pack_t *pack) {
-	pack->buffer = realloc(pack->buffer, (pack->size + 4) * sizeof(char));
-	pack->buffer[pack->size] = value & 0xff;
-	++pack->size;
-	pack->buffer[pack->size] = (value >> 8) & 0xff;
-	++pack->size;
-	pack->buffer[pack->size] = (value >> 16) & 0xff;
-	++pack->size;
-	pack->buffer[pack->size] = (value >> 24) & 0xff;
-	++pack->size;
-}
-
-pack_t c_block_storage_network_serialize(unsigned int blocks[], int *palette, int palette_length) {
-	pack_t out;
-	out.buffer = malloc(1);
-	out.size = 1;
+binary_stream_t c_block_storage_network_serialize(unsigned int blocks[], int *palette, int palette_length) {
+	binary_stream_t stream;
+	stream.buffer = malloc(0);
+	stream.offset = 0;
+	stream.size = 0;
 	int bits_per_block = (int) ceil(log2(palette_length));
 	switch (bits_per_block)
 	{
@@ -133,7 +97,7 @@ pack_t c_block_storage_network_serialize(unsigned int blocks[], int *palette, in
 			}
 			break;
 	}
-	out.buffer[0] = (char) ((bits_per_block << 1) | 1);
+	put_unsigned_byte((char) ((bits_per_block << 1) | 1), &stream);
 	int blocks_per_word = (int) floor(32.0 / bits_per_block);
 	int words_per_chunk = (int) ceil(4096.0 / blocks_per_word);
 	int pos = 0;
@@ -147,11 +111,11 @@ pack_t c_block_storage_network_serialize(unsigned int blocks[], int *palette, in
 			word |= state << (bits_per_block * block_index);
 			++pos;
 		}
-		put_unsigned_int_le(word, &out);
+		put_unsigned_int_le(word, &stream);
 	}
-	put_signed_var_int(palette_length, &out);
+	put_signed_var_int(palette_length, &stream);
 	for (int i = 0; i < palette_length; ++i) {
-		put_signed_var_int(palette[i], &out);
+		put_signed_var_int(palette[i], &stream);
 	}
 	return out;
 }
@@ -175,7 +139,7 @@ static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
 		long_obj = PyList_GetItem(palette_obj, i);
 		palette[i] = PyLong_AsLong(long_obj);
 	}
-	pack_t result = c_block_storage_network_serialize(blocks, palette, palette_length);
+	binary_stream_t result = c_block_storage_network_serialize(blocks, palette, palette_length);
 	return PyBytes_FromStringAndSize(result.buffer, result.size);
 }
 
