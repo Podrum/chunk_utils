@@ -15,7 +15,7 @@
 
 from setuptools import setup, Extension
 
-module = Extension("chunk_utils", sources = ["chunk_utils.c"])
+module = Extension("chunk_utils", sources = ["chunk_utils.c", "binary_stream.c"])
 
 setup(
     name = "chunk_utils",
