@@ -117,7 +117,7 @@ binary_stream_t c_block_storage_network_serialize(unsigned int blocks[], int *pa
 	for (int i = 0; i < palette_length; ++i) {
 		put_signed_var_int(palette[i], &stream);
 	}
-	return out;
+	return stream;
 }
 
 static PyObject *block_storage_network_serialize(PyObject *self, PyObject *args)
